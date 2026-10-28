@@ -52,7 +52,7 @@
     for (const p of ['A', 'B']) {
       const s = model.players[p];
       const parts = [t('room.player', { p }), s.engine ? `(${s.engine})` : '', s.connected ? t('watch.connected') : t('watch.disconnected'), s.ready ? `· ${t('watch.ready')}` : ''];
-      if (s.reason) parts.push(`· ${t('watch.refused', { reason: s.reason })}`);
+      if (s.reason) parts.push(`· ${t('watch.refused', { reason: TS.i18n.refusal(s) })}`);
       list.append(el('li', {}, el('span', { className: `dot${s.connected ? ' on' : ''}` }), parts.filter(Boolean).join(' ')));
     }
     list.append(el('li', {}, t(`watch.state.${model.state}`)));

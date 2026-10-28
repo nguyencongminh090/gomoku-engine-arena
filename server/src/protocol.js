@@ -7,6 +7,8 @@ const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isInt = (v) => Number.isInteger(v);
 const isStr = (v) => typeof v === 'string';
 const no = (reason) => ({ ok: false, reason });
+const isScalar = (v) => (isStr(v) ? v.length <= 200 : typeof v === 'number' || typeof v === 'boolean');
+const isArgs = (v) => isObj(v) && Object.keys(v).length <= 8 && Object.values(v).every(isScalar);
 
 function decode(raw) {
   const text = Buffer.isBuffer(raw) ? raw : String(raw);
@@ -21,7 +23,10 @@ const CLIENT = {
   hello: (m) => isStr(m.token) && m.token.length > 0 && m.token.length <= 256
     && isObj(m.engine) && isStr(m.engine.name) && isStr(m.engine.version) && ENGINE_KINDS.includes(m.engine.kind)
     && isObj(m.limits) && isInt(m.limits.maxW) && isInt(m.limits.maxH),
-  ready: (m) => typeof m.ok === 'boolean' && (m.reason === undefined || isStr(m.reason)),
+  // `code` + `args` let the UI translate a refusal; `reason` stays as English text for logs and unknown codes.
+  ready: (m) => typeof m.ok === 'boolean' && (m.reason === undefined || isStr(m.reason))
+    && (m.code === undefined || (isStr(m.code) && m.code.length <= 64))
+    && (m.args === undefined || isArgs(m.args)),
   move: (m) => isInt(m.gameId) && m.gameId >= 0 && isInt(m.ply) && m.ply >= 0 && isInt(m.x) && isInt(m.y),
   info: (m) => isObj(m.data),
   log: (m) => isStr(m.level) && isStr(m.text),

@@ -9,33 +9,36 @@ const sha256 = (s) => crypto.createHash('sha256').update(s).digest();
 const randomToken = (bytes = 24) => crypto.randomBytes(bytes).toString('base64url'); // 192 bits for secrets
 const intIn = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 
-function badConfig(message) {
+// `detail` is a stable code the UI translates; `line` locates an opening error.
+function badConfig(message, detail, line) {
   const err = new Error(message);
   err.code = 'badConfig';
+  err.detail = detail;
+  if (line !== undefined) err.line = line;
   return err;
 }
 
 // Validates a room config and returns it with defaults applied plus the game schedule.
 function normalizeConfig(cfg) {
-  if (cfg === null || typeof cfg !== 'object') throw badConfig('config must be an object');
+  if (cfg === null || typeof cfg !== 'object') throw badConfig('config must be an object', 'config');
   const out = {
     rule: cfg.rule, w: cfg.w, h: cfg.h, games: cfg.games,
     matchMs: cfg.matchMs, turnMs: cfg.turnMs,
     reconnectSec: cfg.reconnectSec === undefined ? 60 : cfg.reconnectSec,
     openingsText: cfg.openingsText,
   };
-  if (!RULES.includes(out.rule)) throw badConfig('unknown rule');
-  if (!intIn(out.w, 5, 22) || !intIn(out.h, 5, 22)) throw badConfig('board sides must be integers in 5..22');
-  if (!intIn(out.games, 1, MAX_GAMES)) throw badConfig(`games must be an integer in 1..${MAX_GAMES}`);
-  if (!intIn(out.matchMs, 1, 24 * 3600e3)) throw badConfig('matchMs must be a positive integer');
-  if (!intIn(out.turnMs, 0, 24 * 3600e3)) throw badConfig('turnMs must be a non-negative integer');
-  if (!intIn(out.reconnectSec, 1, 3600)) throw badConfig('reconnectSec must be an integer in 1..3600');
-  if (typeof out.openingsText !== 'string' || out.openingsText.length > 20000) throw badConfig('openingsText must be a string');
+  if (!RULES.includes(out.rule)) throw badConfig('unknown rule', 'rule');
+  if (!intIn(out.w, 5, 22) || !intIn(out.h, 5, 22)) throw badConfig('board sides must be integers in 5..22', 'size');
+  if (!intIn(out.games, 1, MAX_GAMES)) throw badConfig(`games must be an integer in 1..${MAX_GAMES}`, 'games');
+  if (!intIn(out.matchMs, 1, 24 * 3600e3)) throw badConfig('matchMs must be a positive integer', 'matchMs');
+  if (!intIn(out.turnMs, 0, 24 * 3600e3)) throw badConfig('turnMs must be a non-negative integer', 'turnMs');
+  if (!intIn(out.reconnectSec, 1, 3600)) throw badConfig('reconnectSec must be an integer in 1..3600', 'reconnect');
+  if (typeof out.openingsText !== 'string' || out.openingsText.length > 20000) throw badConfig('openingsText must be a string', 'openingsType');
   let schedule;
   try {
     schedule = buildSchedule(parseOpenings(out.openingsText, out.w, out.h, out.rule), out.games);
   } catch (e) {
-    if (e.code) throw Object.assign(badConfig(`openings: ${e.message}`), { detail: e.code });
+    if (e.code) throw badConfig(`openings: ${e.message}`, e.code, e.line);
     throw e;
   }
   return { cfg: out, schedule };

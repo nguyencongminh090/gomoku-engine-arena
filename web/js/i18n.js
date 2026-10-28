@@ -85,6 +85,26 @@
     'result.disconnect': 'rớt kết nối',
     'result.absent': 'vắng mặt',
     'result.illegal': 'nước đi phạm luật',
+    'refuse.unknownEngine': 'Không nhận ra loại engine này.',
+    'refuse.boardLimit': 'Bàn {w}×{h} vượt giới hạn của engine ({maxW}×{maxH}).',
+    'refuse.classicSquareOnly': 'Engine Gomocup cổ điển chỉ chơi bàn vuông.',
+    'refuse.classicFreestyleOnly': 'Engine Gomocup cổ điển chỉ chơi luật Freestyle.',
+    'refuse.engineNoAnswer': 'Engine không trả lời sau lệnh "{command}".',
+    'refuse.engineRejected': 'Engine từ chối lệnh "{command}": {error}',
+    'create.srv.config': 'Cấu hình không hợp lệ.',
+    'create.srv.rule': 'Luật không hợp lệ.',
+    'create.srv.size': 'Cạnh bàn phải là số nguyên từ 5 đến 22.',
+    'create.srv.games': 'Số ván phải là số nguyên từ 1 đến 200.',
+    'create.srv.matchMs': 'Thời gian cả ván phải lớn hơn 0.',
+    'create.srv.turnMs': 'Thời gian mỗi nước phải là số không âm.',
+    'create.srv.reconnect': 'Thời gian chờ nối lại phải từ 1 đến 3600 giây.',
+    'create.srv.openingsType': 'Khai cuộc phải là văn bản.',
+    'create.srv.syntax': 'Dòng {line}: toạ độ phải có dạng x,y (số nguyên không âm).',
+    'create.srv.range': 'Dòng {line}: có ô nằm ngoài bàn.',
+    'create.srv.duplicate': 'Dòng {line}: có ô bị lặp lại.',
+    'create.srv.winning': 'Dòng {line}: khai cuộc đã có một hàng thắng.',
+    'create.srv.empty': 'Cần ít nhất một khai cuộc (dùng - cho bàn trống).',
+    'create.srv.tooFew': 'Không đủ khai cuộc cho số ván đã chọn.',
   };
 
   const en = {
@@ -170,6 +190,26 @@
     'result.disconnect': 'disconnected',
     'result.absent': 'absent',
     'result.illegal': 'illegal move',
+    'refuse.unknownEngine': 'This engine type was not recognised.',
+    'refuse.boardLimit': 'A {w}×{h} board exceeds the engine limit ({maxW}×{maxH}).',
+    'refuse.classicSquareOnly': 'Classic Gomocup engines only play square boards.',
+    'refuse.classicFreestyleOnly': 'Classic Gomocup engines only play the Freestyle rule.',
+    'refuse.engineNoAnswer': 'The engine did not answer after "{command}".',
+    'refuse.engineRejected': 'The engine rejected "{command}": {error}',
+    'create.srv.config': 'Invalid configuration.',
+    'create.srv.rule': 'Unknown rule.',
+    'create.srv.size': 'Each side must be a whole number from 5 to 22.',
+    'create.srv.games': 'Games must be a whole number from 1 to 200.',
+    'create.srv.matchMs': 'The whole-game time must be greater than 0.',
+    'create.srv.turnMs': 'The time per move must not be negative.',
+    'create.srv.reconnect': 'The reconnect wait must be between 1 and 3600 seconds.',
+    'create.srv.openingsType': 'Openings must be text.',
+    'create.srv.syntax': 'Line {line}: coordinates must look like x,y (non-negative whole numbers).',
+    'create.srv.range': 'Line {line}: a cell is outside the board.',
+    'create.srv.duplicate': 'Line {line}: a cell is repeated.',
+    'create.srv.winning': 'Line {line}: the opening already contains a winning line.',
+    'create.srv.empty': 'At least one opening is required (use - for the empty board).',
+    'create.srv.tooFew': 'There are not enough openings for the chosen number of games.',
   };
 
   const i18n = {
@@ -178,6 +218,11 @@
     t(key, vars) {
       const text = this.dict[this.lang][key] ?? this.dict.vi[key] ?? key;
       return vars ? text.replace(/\{(\w+)\}/g, (_, name) => (name in vars ? String(vars[name]) : `{${name}}`)) : text;
+    },
+    // Text for a player's refusal: translated from its code when we know it, otherwise the raw reason.
+    refusal(st) {
+      const key = st.reasonCode ? `refuse.${st.reasonCode}` : null;
+      return key && key in this.dict.vi ? this.t(key, st.reasonArgs || {}) : st.reason;
     },
     setLang(lang) {
       if (!this.dict[lang]) return;

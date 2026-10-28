@@ -69,3 +69,11 @@ test('builders round-trip through parse', () => {
   assert.equal(P.parseServerMessage('{"type":"go"}').ok, false);
   assert.equal(P.parseServerMessage(P.config({ rule: 'bogus', w: 15, h: 15, matchMs: 1, turnMs: 1 })).ok, false);
 });
+
+test('ready may carry a translatable refusal code with scalar args', () => {
+  const ok = P.parseClientMessage(JSON.stringify({ type: 'ready', ok: false, reason: 'x', code: 'boardLimit', args: { w: 15, maxW: 10, note: 'a' } }), 'agent');
+  assert.equal(ok.ok, true);
+  for (const bad of [{ code: 5 }, { code: 'x'.repeat(65) }, { args: 'no' }, { args: { a: { b: 1 } } }, { args: { a: 'x'.repeat(201) } }]) {
+    assert.equal(P.parseClientMessage(JSON.stringify({ type: 'ready', ok: false, ...bad }), 'agent').ok, false, JSON.stringify(bad));
+  }
+});

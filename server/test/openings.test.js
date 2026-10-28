@@ -43,3 +43,10 @@ test('rejects empty list', () => {
   assert.equal(code(() => parseOpenings('', 15, 15, 'freestyle')), 'empty');
   assert.equal(code(() => parseOpenings('\n  \n', 15, 15, 'freestyle')), 'empty');
 });
+
+test('opening errors carry the offending line number', () => {
+  const line = (text) => { try { parseOpenings(text, 15, 15, 'freestyle'); } catch (e) { return e.line; } return null; };
+  assert.equal(line('7,7\n99,99'), 2);
+  assert.equal(line('7,7\n\n3,3 3,3'), 3);
+  assert.equal(line('a,b'), 1);
+});

@@ -44,11 +44,14 @@ async function detectEngine(proc, { timeoutMs = 3000 } = {}) {
 // Static checks that need no engine round trip.
 function checkConfig(kind, cfg) {
   const limits = LIMITS[kind];
-  if (!limits) return { ok: false, reason: 'engine type not recognised' };
-  if (cfg.w > limits.maxW || cfg.h > limits.maxH) return { ok: false, reason: `board ${cfg.w}x${cfg.h} exceeds this engine's limit ${limits.maxW}x${limits.maxH}` };
+  const refuse = (code, args, reason) => ({ ok: false, code, args, reason });
+  if (!limits) return refuse('unknownEngine', {}, 'engine type not recognised');
+  if (cfg.w > limits.maxW || cfg.h > limits.maxH) {
+    return refuse('boardLimit', { w: cfg.w, h: cfg.h, maxW: limits.maxW, maxH: limits.maxH }, `board ${cfg.w}x${cfg.h} exceeds this engine's limit ${limits.maxW}x${limits.maxH}`);
+  }
   if (kind === 'classic') {
-    if (cfg.w !== cfg.h) return { ok: false, reason: 'classic Gomocup engine supports only square boards' };
-    if (cfg.rule !== 'freestyle') return { ok: false, reason: 'classic Gomocup engine supports only the freestyle rule' };
+    if (cfg.w !== cfg.h) return refuse('classicSquareOnly', {}, 'classic Gomocup engine supports only square boards');
+    if (cfg.rule !== 'freestyle') return refuse('classicFreestyleOnly', {}, 'classic Gomocup engine supports only the freestyle rule');
   }
   return { ok: true };
 }
@@ -57,9 +60,9 @@ function checkConfig(kind, cfg) {
 async function probeConfigure(proc, adapter, cfg, { timeoutMs = 3000 } = {}) {
   for (const command of [...adapter.start(), ...adapter.configure(cfg)]) {
     const { answered, lines } = await exchange(proc, command, timeoutMs);
-    if (!answered) return { ok: false, reason: `engine did not answer after "${command}"` };
+    if (!answered) return { ok: false, code: 'engineNoAnswer', args: { command }, reason: `engine did not answer after "${command}"` };
     const errors = lines.map((l) => adapter.parseLine(l)).filter((m) => m && m.type === 'error').map((m) => m.text);
-    if (errors.length) return { ok: false, reason: `engine rejected "${command}": ${errors.join('; ')}` };
+    if (errors.length) return { ok: false, code: 'engineRejected', args: { command, error: errors.join('; ').slice(0, 200) }, reason: `engine rejected "${command}": ${errors.join('; ')}` };
   }
   return { ok: true };
 }

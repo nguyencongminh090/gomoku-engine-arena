@@ -295,3 +295,22 @@ test('a move is never sent a turn budget below one millisecond and unlimited sta
   connect(b.match, 'A'); connect(b.match, 'B');
   assert.equal(goes(b.sent, 'A').at(-1).turnMs, 0);
 });
+
+test('refusals expose a code and args for the UI, and agent-supplied codes pass through', () => {
+  const { match } = setup({ w: 15, h: 12 });
+  match.agentConnected('A', { ...hello(), limits: { maxW: 10, maxH: 22 } });
+  match.agentMessage('A', { type: 'ready', ok: true });
+  const a = match.snapshot().players.A;
+  assert.equal(a.reasonCode, 'boardLimit');
+  assert.deepEqual(a.reasonArgs, { w: 15, h: 12, maxW: 10, maxH: 22 });
+  match.agentConnected('B', hello('classic'));
+  match.agentMessage('B', { type: 'ready', ok: true });
+  assert.equal(match.snapshot().players.B.reasonCode, 'classicSquareOnly');
+  match.agentConnected('B', hello());
+  match.agentMessage('B', { type: 'ready', ok: false, reason: 'engine rejected "INFO RULE 8": nope', code: 'engineRejected', args: { command: 'INFO RULE 8', error: 'nope' } });
+  const b = match.snapshot().players.B;
+  assert.deepEqual([b.reasonCode, b.reasonArgs.command], ['engineRejected', 'INFO RULE 8']);
+  match.agentMessage('B', { type: 'ready', ok: false, reason: 'free text only' });
+  assert.equal(match.snapshot().players.B.reasonCode, null);
+  assert.equal(match.snapshot().players.B.reason, 'free text only');
+});

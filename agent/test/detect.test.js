@@ -83,3 +83,18 @@ test('probe reports an engine that stops answering', async () => {
   assert.equal(r.ok, false);
   assert.match(r.reason, /START 15/);
 });
+
+test('refusals carry a code and args for the UI', async () => {
+  assert.deepEqual(checkConfig('unknown', cfg), { ok: false, code: 'unknownEngine', args: {}, reason: 'engine type not recognised' });
+  const sq = checkConfig('classic', { ...cfg, h: 12 });
+  assert.equal(sq.code, 'classicSquareOnly');
+  assert.equal(checkConfig('classic', { ...cfg, rule: 'caro' }).code, 'classicFreestyleOnly');
+  const big = checkConfig('rapfi', { ...cfg, w: 23, h: 23 });
+  assert.deepEqual([big.code, big.args], ['boardLimit', { w: 23, h: 23, maxW: 22, maxH: 22 }]);
+  const p = engine({ FAKE_NO_RULE: '1' });
+  const r = await probeConfigure(p, rapfi, { ...cfg, rule: 'caro' });
+  assert.equal(r.code, 'engineRejected');
+  assert.deepEqual(r.args, { command: 'INFO RULE 8', error: 'Unknown info rule' });
+  const dead = new EngineProcess('/bin/cat'); procs.push(dead); dead.start();
+  assert.equal((await probeConfigure(dead, rapfi, cfg, { timeoutMs: 200 })).code, 'engineNoAnswer');
+});

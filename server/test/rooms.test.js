@@ -122,3 +122,19 @@ test('resolveToken finds room and player from the token alone', () => {
   assert.equal(reg.resolveToken('nodot'), null);
   assert.equal(reg.resolveToken(42), null);
 });
+
+test('config errors carry a stable detail code (and the line for openings) for the UI to translate', () => {
+  const { reg } = make();
+  const detail = (bad) => { try { reg.create('1.1.1.1', bad); } catch (e) { return [e.code, e.detail, e.line]; } return null; };
+  assert.deepEqual(detail(cfg({ openingsText: '7,7\n99,99' })), ['badConfig', 'range', 2]);
+  assert.deepEqual(detail(cfg({ games: 6 })), ['badConfig', 'tooFew', undefined]);
+  assert.deepEqual(detail(cfg({ openingsText: '' })), ['badConfig', 'empty', undefined]);
+  assert.equal(detail(cfg({ rule: 'x' }))[1], 'rule');
+  assert.equal(detail(cfg({ w: 3 }))[1], 'size');
+  assert.equal(detail(cfg({ games: 0 }))[1], 'games');
+  assert.equal(detail(cfg({ matchMs: 0 }))[1], 'matchMs');
+  assert.equal(detail(cfg({ turnMs: -1 }))[1], 'turnMs');
+  assert.equal(detail(cfg({ reconnectSec: 0 }))[1], 'reconnect');
+  assert.equal(detail(cfg({ openingsText: 7 }))[1], 'openingsType');
+  assert.equal(detail(null)[1], 'config');
+});

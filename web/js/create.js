@@ -33,7 +33,14 @@
 
   const needsRapfi = ({ rule, w, h }) => rule !== 'freestyle' || Number(w) !== Number(h);
 
-  TS.create = { validate, needsRapfi };
+  // Which translated message to show for a failed POST /api/rooms body; unknown codes fall back to the server's text.
+  function serverError(body) {
+    const key = body && body.detail ? `create.srv.${body.detail}` : null;
+    if (key && TS.i18n && key in TS.i18n.dict.vi) return { key, vars: { line: body.line } };
+    return { key: 'create.errServer', vars: { msg: (body && body.message) || '?' } };
+  }
+
+  TS.create = { validate, needsRapfi, serverError };
 
   // ---- page wiring (skipped when loaded without a DOM) ----
   if (typeof document === 'undefined' || !document.getElementById('createForm')) return;
@@ -74,7 +81,8 @@
         location.href = `room.html?r=${encodeURIComponent(body.roomId)}&v=${encodeURIComponent(body.viewId)}`;
         return;
       }
-      $('formError').textContent = res.status === 429 ? TS.t('create.errRate') : TS.t('create.errServer', { msg: body.message || res.status });
+      const err = res.status === 429 ? { key: 'create.errRate' } : serverError(body.message ? body : { message: String(res.status) });
+      $('formError').textContent = TS.t(err.key, err.vars);
     } catch (e) {
       $('formError').textContent = TS.t('create.errNetwork');
     } finally {

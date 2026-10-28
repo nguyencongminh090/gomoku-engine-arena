@@ -110,7 +110,7 @@ async function startServer({
         const created = registry.create(clientIp(req), cfg);
         return json(res, 201, created);
       } catch (e) {
-        if (e.code === 'badConfig') return json(res, 400, { error: 'badConfig', message: e.message, detail: e.detail });
+        if (e.code === 'badConfig') return json(res, 400, { error: 'badConfig', message: e.message, detail: e.detail, line: e.line });
         if (e.code === 'ipLimit') return json(res, 429, { error: 'ipLimit', message: e.message });
         throw e;
       }

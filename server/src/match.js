@@ -20,7 +20,7 @@ class Match {
     this.gameIndex = -1;
     this.reconnectMs = cfg.reconnectSec * 1000;
     this.players = {};
-    for (const p of PLAYERS) this.players[p] = { connected: false, ready: false, engine: null, limits: null, reason: null, since: now() };
+    for (const p of PLAYERS) this.players[p] = { connected: false, ready: false, engine: null, limits: null, reason: null, reasonCode: null, reasonArgs: null, since: now() };
     if (this.records.length >= schedule.length) this._endMatch();
   }
 
@@ -45,7 +45,10 @@ class Match {
     const players = {};
     for (const p of PLAYERS) {
       const s = this.players[p];
-      players[p] = { connected: s.connected, ready: s.ready, engine: s.engine ? s.engine.name : null, reason: s.reason };
+      players[p] = {
+        connected: s.connected, ready: s.ready, engine: s.engine ? s.engine.name : null,
+        reason: s.reason, reasonCode: s.reasonCode, reasonArgs: s.reasonArgs,
+      };
     }
     return players;
   }
@@ -76,10 +79,12 @@ class Match {
   // The server re-checks what the agent claimed; a refusal here is only visible in status events.
   _refusal(hello) {
     const { w, h, rule } = this.cfg;
-    if (!hello) return 'no hello';
-    if (hello.engine.kind === 'unknown') return 'engine type not recognised';
-    if (w > hello.limits.maxW || h > hello.limits.maxH) return `board ${w}x${h} exceeds engine limit ${hello.limits.maxW}x${hello.limits.maxH}`;
-    if (hello.engine.kind === 'classic' && (w !== h || rule !== 'freestyle')) return 'classic engine supports only square freestyle boards';
+    if (!hello) return { code: 'unknownEngine', args: {}, reason: 'no hello' };
+    if (hello.engine.kind === 'unknown') return { code: 'unknownEngine', args: {}, reason: 'engine type not recognised' };
+    const { maxW, maxH } = hello.limits;
+    if (w > maxW || h > maxH) return { code: 'boardLimit', args: { w, h, maxW, maxH }, reason: `board ${w}x${h} exceeds engine limit ${maxW}x${maxH}` };
+    if (hello.engine.kind === 'classic' && w !== h) return { code: 'classicSquareOnly', args: {}, reason: 'classic engine supports only square boards' };
+    if (hello.engine.kind === 'classic' && rule !== 'freestyle') return { code: 'classicFreestyleOnly', args: {}, reason: 'classic engine supports only the freestyle rule' };
     return null;
   }
 
@@ -93,6 +98,8 @@ class Match {
     s.engine = hello.engine;
     s.limits = hello.limits;
     s.reason = null;
+    s.reasonCode = null;
+    s.reasonArgs = null;
     const { rule, w, h, matchMs, turnMs } = this.cfg;
     this.sendFn(player, P.config({ rule, w, h, matchMs, turnMs }));
     this._emitStatus();
@@ -121,10 +128,12 @@ class Match {
 
   _onReady(player, msg) {
     const s = this.players[player];
-    const reason = msg.ok ? this._refusal(s.hello) : (msg.reason || 'refused');
-    if (reason !== null) this._leavePresence(player);
-    s.ready = reason === null;
-    s.reason = reason;
+    const refusal = msg.ok ? this._refusal(s.hello) : { reason: String(msg.reason || 'refused').slice(0, 300), code: msg.code, args: msg.args };
+    if (refusal !== null) this._leavePresence(player);
+    s.ready = refusal === null;
+    s.reason = refusal ? refusal.reason : null;
+    s.reasonCode = refusal && refusal.code ? refusal.code : null;
+    s.reasonArgs = refusal && refusal.args ? refusal.args : null;
     this._emitStatus();
     if (!s.ready) return;
     if (this.state === 'playing' && this.game.toMove === player) this._sendGo();

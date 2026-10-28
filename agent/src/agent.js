@@ -116,11 +116,11 @@ class Agent extends EventEmitter {
     this.gen++;
     this.cfg = null;
     if (this.session) await this.session.abort();
-    const refuse = (reason) => this._send({ type: 'ready', ok: false, reason });
+    const refuse = ({ reason, code, args }) => this._send({ type: 'ready', ok: false, reason: reason.slice(0, 300), code, args });
     const check = checkConfig(this.info.kind, cfg);
-    if (!check.ok) return refuse(check.reason);
+    if (!check.ok) return refuse(check);
     const probe = await probeConfigure(this.engine, this.adapter, cfg);
-    if (!probe.ok) return refuse(probe.reason);
+    if (!probe.ok) return refuse(probe);
     if (ws !== this.ws) return undefined;
     this.session.configure(cfg, { send: false });
     this.cfg = cfg;

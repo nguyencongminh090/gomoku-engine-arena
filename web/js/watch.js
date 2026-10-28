@@ -65,7 +65,7 @@
       const st = model.players[p];
       const turn = model.current && model.current.toMove === p && view.live;
       const sub = [st.engine || '', st.connected ? t('watch.connected') : t('watch.disconnected')];
-      if (st.reason) sub.push(t('watch.refused', { reason: st.reason }));
+      if (st.reason) sub.push(t('watch.refused', { reason: TS.i18n.refusal(st) }));
       const card = el('div', { className: `pcard${turn ? ' turn' : ''}` },
         el('span', { className: 'name' }, el('span', { className: `dot${st.connected ? ' on' : ''}` }), `${p}`),
         el('span', { className: 'clock', id: `clock${p}` }, fmtClock(live.clockMs(model, p))),

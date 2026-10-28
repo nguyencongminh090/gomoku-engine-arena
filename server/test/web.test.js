@@ -143,3 +143,27 @@ test('a snapshot of a finished match yields its winner without any event', () =>
   assert.equal(live.reduce(null, snap({}), 1).winner, 'A');
   assert.equal(live.reduce(null, snap({ score: { A: 1, B: 1, draws: 0 } }), 1).winner, null);
 });
+
+test('every refusal and config error code produced by the server and agent has a translation', () => {
+  const { i18n } = loadWeb('i18n.js');
+  const src = (f) => fs.readFileSync(path.join(__dirname, '../..', f), 'utf8');
+  const codes = (text, re) => [...text.matchAll(re)].map((m) => m[1]);
+  const refusals = new Set([...codes(src('agent/src/detect.js'), /code: '(\w+)'/g), ...codes(src('server/src/match.js'), /code: '(\w+)'/g)]);
+  assert.ok(refusals.size >= 5, [...refusals].join());
+  for (const c of refusals) assert.ok(`refuse.${c}` in i18n.dict.vi, `missing refuse.${c}`);
+  const cfgErrors = new Set([...codes(src('server/src/rooms.js'), /badConfig\([^)]*?'(\w+)'\)/g), ...codes(src('server/src/openings.js'), /fail\('(\w+)'/g), 'tooFew']);
+  assert.ok(cfgErrors.size >= 10, [...cfgErrors].join());
+  for (const c of cfgErrors) assert.ok(`create.srv.${c}` in i18n.dict.vi, `missing create.srv.${c}`);
+});
+
+test('server error bodies map to translated messages with a safe fallback', () => {
+  const { create, i18n } = loadWeb('i18n.js', 'create.js');
+  const e = (body) => plain(create.serverError(body));
+  assert.deepEqual(e({ error: 'badConfig', message: 'x', detail: 'range', line: 2 }), { key: 'create.srv.range', vars: { line: 2 } });
+  assert.deepEqual(e({ error: 'badConfig', message: 'weird', detail: 'zzz' }), { key: 'create.errServer', vars: { msg: 'weird' } });
+  assert.deepEqual(e({}), { key: 'create.errServer', vars: { msg: '?' } });
+  const st = { reason: 'raw text', reasonCode: 'boardLimit', reasonArgs: { w: 15, h: 12, maxW: 10, maxH: 22 } };
+  assert.match(i18n.refusal(st), /15.*12.*10.*22/);
+  assert.equal(i18n.refusal({ reason: 'raw text', reasonCode: 'nope' }), 'raw text');
+  assert.equal(i18n.refusal({ reason: 'raw text' }), 'raw text');
+});
