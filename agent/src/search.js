@@ -19,9 +19,10 @@ class SearchSession extends EventEmitter {
     proc.on('exit', (code) => this._onExit(code));
   }
 
-  configure(cfg) {
+  // `send: false` records a configuration the caller has already delivered (and verified) itself.
+  configure(cfg, { send = true } = {}) {
     this.cfg = cfg;
-    this._init();
+    if (send) this._init();
   }
 
   _init() {
