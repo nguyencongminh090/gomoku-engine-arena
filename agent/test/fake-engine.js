@@ -7,8 +7,9 @@
 //   FAKE_HANG         1 = ignores STOP entirely, thinks until killed
 //   FAKE_STRAY        1 = prints an extra unsolicited "9,9" after every move
 //   FAKE_NO_RULE      1 = answers INFO RULE with ERROR (engine without that extension)
+//   FAKE_ROW          row scanned first (default 0), so two fakes can race along different rows
 //   FAKE_LOG          file that receives every received line
-// The move is the first empty cell in row-major order, so it identifies the position that was searched.
+// The move is the first empty cell in row-major order (starting at row FAKE_ROW), so it identifies the position that was searched.
 const fs = require('node:fs');
 const readline = require('node:readline');
 
@@ -24,7 +25,11 @@ let timer = null;
 let thinking = false;
 
 function pickMove() {
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!stones.has(`${x},${y}`)) return `${x},${y}`;
+  const first = Number(env.FAKE_ROW || 0) % h;
+  for (let i = 0; i < h; i++) {
+    const y = (first + i) % h;
+    for (let x = 0; x < w; x++) if (!stones.has(`${x},${y}`)) return `${x},${y}`;
+  }
   return '-1,-1';
 }
 

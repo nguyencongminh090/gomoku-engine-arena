@@ -4,11 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Greenfield: the directory was empty when this file was written. There is no code, build, lint or test command yet.
-Add them to this file when the first ones exist. Everything under "Planned architecture" is intent taken from the
-user's brief and from the reference projects, not a description of existing code.
+Built (see `docs/superpowers/plans/2026-10-28-engine-match-server.md`, tasks 1-10). Node.js >= 20, CommonJS, no bundler;
+runtime deps are `ws` and `better-sqlite3` only.
 
 Conversation language with the user: **Vietnamese**.
+
+## Commands
+
+| Command | What it does |
+| :--- | :--- |
+| `npm test` | All unit tests (`node:test`: `server/test`, `agent/test`, `test` e2e). The Rapfi oracle is skipped unless `RAPFI_ENGINE` is set. |
+| `RAPFI_ENGINE=/path/to/pbrain-rapfi npm test` | Same plus `server/test/oracle.test.js` (cross-checks `checkWin` against a real Rapfi; needs the net files next to the binary). |
+| `node --test server/test/match.test.js` | One test file. |
+| `PORT=8080 npm start` | Server (`server/bin/server.js`); env vars in `docs/deploy.md`. |
+| `node agent/bin/engine-agent.js --engine <path> --token <token> --server ws://host:8080/ws/agent` | Player's local agent. |
+
+## Layout
+
+- `server/src`: `board`/`rules` (win detection for freestyle, standard, caro), `openings`/`schedule`, `clock`/`game` (one game),
+  `match` (lifecycle, reconnect windows; I/O injected), `protocol` (wire messages), `rooms`/`db` (tokens, limits, SQLite), `server` (HTTP + WS).
+- `agent/src`: `engine-process`, `adapters/{rapfi,gomocup}`, `search` (strict STOP state machine), `detect` (ABOUT + config probe), `agent`.
+- `web/`: classic scripts on `window.TestSite` (`i18n`, `board`, `live`, `create`, page scripts); pages `index`, `room`, `watch`.
+- Tests: `agent/test/fake-engine.js` is a scriptable engine (env `FAKE_*`, documented at its top). Always kill spawned engines in an `after` hook
+  or a failing assertion leaves the runner hanging.
+- Decisions: `docs/adr/`; the approved design is in `docs/superpowers/specs/`.
 
 ## What this is
 
@@ -33,7 +52,7 @@ Facts from those references that will bite a server implementer:
 - The existing bridge sends **whole positions, not incremental moves** (`{"type":"search", "size", "toMove", "stones":[{x,y,c}], "last"}`) so one side stays the source of truth; replies are `info` / exactly one `move` per accepted search id / `log` / `error`. Reuse that shape where it fits.
 - Rules/variants beyond freestyle (walls, portals, torus, rect boards, Renju, Caro) are Rapfi-specific `INFO ...` extensions, not part of plain Gomocup. Decide explicitly which rule set the tournament supports; plain Gomocup engines will not understand the extensions.
 
-## Planned architecture (proposal, not built)
+## Architecture (as built)
 
 The key constraint that spans several files: **a web server cannot launch or reach an engine on a player's machine, and browsers cannot spawn processes.** Each player therefore runs a small *local agent* that spawns their engine and dials **out** to the server over WebSocket (the inverse of `extension_vncaro`, where the bridge is the local *server*). Reuse its `EngineAdapter`/`Session` design for the agent side.
 
