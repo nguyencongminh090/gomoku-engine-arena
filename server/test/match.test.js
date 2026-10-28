@@ -240,3 +240,18 @@ test('info and log from agents are forwarded as events', () => {
   assert.deepEqual(of(events, 'info')[0], { type: 'info', player: 'A', data: { depth: 7 } });
   assert.deepEqual(of(events, 'log')[0], { type: 'log', player: 'A', level: 'info', text: 'hi' });
 });
+
+test('reconnecting without ready, or being refused repeatedly, does not extend the absence window', () => {
+  const { match, t, events } = setup();
+  connect(match, 'A'); connect(match, 'B');
+  match.agentDisconnected('A');
+  for (let i = 0; i < 5; i++) {
+    t.v += 15000;
+    match.agentConnected('A', hello()); // connects but never says ready
+    match.agentMessage('A', { type: 'ready', ok: false, reason: 'nope' });
+    match.agentDisconnected('A');
+  }
+  t.v += 1000; // 76s since A first left
+  match.tick();
+  assert.deepEqual(of(events, 'gameOver')[0].result, { winner: 'B', reason: 'disconnect' });
+});

@@ -26,6 +26,10 @@ class Match {
 
   _present(p) { return this.players[p].connected && this.players[p].ready; }
 
+  // The absence window runs from the moment a player stops being present and is never restarted by
+  // reconnecting or being refused again; only becoming present and leaving again starts a new one.
+  _leavePresence(p) { if (this._present(p)) this.players[p].since = this.now(); }
+
   _send(p, text) { if (this.players[p].connected) this.sendFn(p, text); }
 
   _score() {
@@ -81,13 +85,13 @@ class Match {
   agentConnected(player, hello) {
     const s = this.players[player];
     if (!s || this.state === 'done') return;
+    this._leavePresence(player);
     s.connected = true;
     s.ready = false;
     s.hello = hello;
     s.engine = hello.engine;
     s.limits = hello.limits;
     s.reason = null;
-    s.since = this.now();
     const { rule, w, h, matchMs, turnMs } = this.cfg;
     this.sendFn(player, P.config({ rule, w, h, matchMs, turnMs }));
     this._emitStatus();
@@ -96,9 +100,9 @@ class Match {
   agentDisconnected(player) {
     const s = this.players[player];
     if (!s || !s.connected) return;
+    this._leavePresence(player);
     s.connected = false;
     s.ready = false;
-    s.since = this.now();
     this._emitStatus();
   }
 
@@ -117,9 +121,9 @@ class Match {
   _onReady(player, msg) {
     const s = this.players[player];
     const reason = msg.ok ? this._refusal(s.hello) : (msg.reason || 'refused');
+    if (reason !== null) this._leavePresence(player);
     s.ready = reason === null;
     s.reason = reason;
-    if (!s.ready) s.since = this.now();
     this._emitStatus();
     if (!s.ready) return;
     if (this.state === 'playing' && this.game.toMove === player) this._sendGo();
