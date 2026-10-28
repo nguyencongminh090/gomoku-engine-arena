@@ -15,6 +15,7 @@ class GameState {
     for (const { x, y } of opening) this._place(x, y);
     this.clock = new Clock({ matchMs, turnMs, now });
     this.result = null;
+    this.moveLog = []; // { ply, player, x, y, elapsedMs } for moves made after the opening
     this.clock.start(this.toMove);
   }
 
@@ -46,7 +47,8 @@ class GameState {
     if (ply !== this.ply) return { ok: false, reason: 'badPly' };
     if (!this.board.inBounds(x, y)) return { ok: false, reason: 'range' };
     if (this.board.get(x, y) !== 0) return { ok: false, reason: 'occupied' };
-    this.clock.stop();
+    const { elapsedMs } = this.clock.stop();
+    this.moveLog.push({ ply, player, x, y, elapsedMs });
     this._place(x, y);
     if (checkWin(this.board, x, y, this.rule)) return { ok: true, result: this._finish({ winner: player, reason: 'five' }) };
     if (this.board.isFull()) return { ok: true, result: this._finish({ winner: null, reason: 'full' }) };

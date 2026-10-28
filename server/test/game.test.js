@@ -140,3 +140,13 @@ test('timeLeftMs reflects the running clock', () => {
   assert.equal(game.timeLeftMs('A'), 57500);
   assert.equal(game.timeLeftMs('B'), 60000);
 });
+
+test('moveLog records each move with its elapsed time', () => {
+  const { game, t } = make();
+  t.v += 300; game.submit('A', 0, 1, 1);
+  t.v += 120; game.submit('B', 1, 2, 2);
+  assert.deepEqual(game.moveLog, [
+    { ply: 0, player: 'A', x: 1, y: 1, elapsedMs: 300 },
+    { ply: 1, player: 'B', x: 2, y: 2, elapsedMs: 120 },
+  ]);
+});

@@ -67,11 +67,12 @@ class RoomRegistry {
       err.code = 'ipLimit';
       throw err;
     }
-    const tokenA = randomToken();
-    const tokenB = randomToken();
+    const id = randomToken(9);
+    const tokenA = `${id}.${randomToken()}`;
+    const tokenB = `${id}.${randomToken()}`;
     const creatorSecret = randomToken();
     const room = {
-      id: randomToken(9), ip, cfg, schedule,
+      id, ip, cfg, schedule,
       hashA: sha256(tokenA).toString('hex'), hashB: sha256(tokenB).toString('hex'),
       hashSecret: sha256(creatorSecret).toString('hex'),
       viewId: randomToken(12), createdAt: this.now(), lastActive: this.now(),
@@ -98,6 +99,16 @@ class RoomRegistry {
     const isA = crypto.timingSafeEqual(h, Buffer.from(room.hashA, 'hex'));
     const isB = crypto.timingSafeEqual(h, Buffer.from(room.hashB, 'hex'));
     return isA ? 'A' : isB ? 'B' : null;
+  }
+
+  // Tokens are '<roomId>.<secret>' so an agent can connect with the token alone.
+  resolveToken(token) {
+    if (typeof token !== 'string') return null;
+    const dot = token.indexOf('.');
+    if (dot < 1) return null;
+    const roomId = token.slice(0, dot);
+    const player = this.authenticate(roomId, token);
+    return player ? { roomId, player } : null;
   }
 
   delete(roomId, creatorSecret) {

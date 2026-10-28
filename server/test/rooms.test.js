@@ -113,3 +113,12 @@ test('rooms and tokens survive a registry restart via the db', () => {
   assert.equal(room.cfg.reconnectSec, 60);
   assert.equal(again.getByViewId(r.viewId).id, r.roomId);
 });
+
+test('resolveToken finds room and player from the token alone', () => {
+  const { reg } = make();
+  const r = reg.create('1.1.1.1', cfg());
+  assert.deepEqual(reg.resolveToken(r.tokenB), { roomId: r.roomId, player: 'B' });
+  assert.equal(reg.resolveToken(r.tokenA + 'x'), null);
+  assert.equal(reg.resolveToken('nodot'), null);
+  assert.equal(reg.resolveToken(42), null);
+});
