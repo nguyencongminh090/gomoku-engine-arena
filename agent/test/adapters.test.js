@@ -13,23 +13,29 @@ test('rapfi configure: rect board, rule id and clocks', () => {
 
 test('rapfi beginSearch: empty board uses BEGIN, otherwise a full BOARD block with absolute colours', () => {
   assert.deepEqual(rapfi.beginSearch({ stones: [], toMove: 1, timeLeftMs: 5000, turnMs: 0, w: 15, h: 15 }),
-    ['RESTART', 'INFO TIME_LEFT 5000', 'BEGIN']);
+    ['RESTART', 'INFO TIMEOUT_TURN 2147483647', 'INFO TIME_LEFT 5000', 'BEGIN']);
   const stones = [{ x: 7, y: 7, c: 1 }, { x: 8, y: 8, c: 2 }, { x: 6, y: 6, c: 1 }];
   assert.deepEqual(rapfi.beginSearch({ stones, toMove: 2, timeLeftMs: 5000, turnMs: 0, w: 15, h: 15 }),
-    ['INFO TIME_LEFT 5000', 'BOARD', '7,7,1', '8,8,2', '6,6,1', 'DONE']);
+    ['INFO TIMEOUT_TURN 2147483647', 'INFO TIME_LEFT 5000', 'BOARD', '7,7,1', '8,8,2', '6,6,1', 'DONE']);
+  // The per-move budget is re-sent on every search, so a shortened move (after a reconnect) is honoured.
+  assert.deepEqual(rapfi.beginSearch({ stones: [], toMove: 1, timeLeftMs: 5000, turnMs: 1200, w: 15, h: 15 }),
+    ['RESTART', 'INFO TIMEOUT_TURN 1200', 'INFO TIME_LEFT 5000', 'BEGIN']);
 });
 
 test('gomocup beginSearch: colours are relative to the side to move (1 own, 2 opponent)', () => {
   const stones = [{ x: 7, y: 7, c: 1 }, { x: 8, y: 8, c: 2 }, { x: 6, y: 6, c: 1 }];
   assert.deepEqual(gomocup.beginSearch({ stones, toMove: 2, timeLeftMs: 5000, turnMs: 0, w: 15, h: 15 }),
-    ['INFO time_left 5000', 'BOARD', '7,7,2', '8,8,1', '6,6,2', 'DONE']);
-  assert.deepEqual(gomocup.beginSearch({ stones: [], toMove: 1, timeLeftMs: 5000, turnMs: 0, w: 15, h: 15 }),
-    ['INFO time_left 5000', 'BEGIN']);
+    ['INFO timeout_turn 2147483647', 'INFO time_left 5000', 'BOARD', '7,7,2', '8,8,1', '6,6,2', 'DONE']);
+  // An empty position is an empty BOARD block, not BEGIN: BEGIN does not clear the previous game's stones.
+  assert.deepEqual(gomocup.beginSearch({ stones: [], toMove: 1, timeLeftMs: 5000, turnMs: 800, w: 15, h: 15 }),
+    ['INFO timeout_turn 800', 'INFO time_left 5000', 'BOARD', 'DONE']);
 });
 
 test('gomocup configure uses START n and Gomocup INFO keys', () => {
   assert.deepEqual(gomocup.configure({ rule: 'freestyle', w: 15, h: 15, matchMs: 1000, turnMs: 100 }),
     ['START 15', 'INFO timeout_match 1000', 'INFO timeout_turn 100', 'INFO rule 0']);
+  // Gomocup reads timeout_turn 0 as "play as fast as possible", so unlimited must be a large number.
+  assert.equal(gomocup.configure({ rule: 'freestyle', w: 15, h: 15, matchMs: 1000, turnMs: 0 })[2], 'INFO timeout_turn 2147483647');
 });
 
 test('parseLine understands moves, errors, ok and progress text', () => {

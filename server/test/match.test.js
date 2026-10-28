@@ -255,3 +255,43 @@ test('reconnecting without ready, or being refused repeatedly, does not extend t
   match.tick();
   assert.deepEqual(of(events, 'gameOver')[0].result, { winner: 'B', reason: 'disconnect' });
 });
+
+test('snapshot of a finished match carries its winner, so late viewers do not see a draw', () => {
+  const { match } = setup();
+  connect(match, 'A'); connect(match, 'B');
+  assert.equal(match.snapshot().winner, undefined); // nothing decided yet
+  playOut(match, 'A');
+  playOut(match, 'A'); // game 1: B moves first but A wins again
+  const snap = match.snapshot();
+  assert.equal(snap.state, 'done');
+  assert.equal(snap.winner, 'A');
+  const { match: draw } = setup();
+  connect(draw, 'A'); connect(draw, 'B');
+  playOut(draw, 'A'); playOut(draw, 'B');
+  assert.equal(draw.snapshot().winner, null);
+});
+
+test('go carries the remaining turn time after a mid-turn reconnect', () => {
+  const { match, t, sent } = setup({ turnMs: 10000 });
+  connect(match, 'A'); connect(match, 'B');
+  assert.equal(goes(sent, 'A').at(-1).turnMs, 10000);
+  t.v += 3000;
+  match.agentDisconnected('A');
+  t.v += 5000; // 8s into the 10s move
+  match.agentConnected('A', hello());
+  match.agentMessage('A', { type: 'ready', ok: true });
+  assert.equal(goes(sent, 'A').at(-1).turnMs, 2000);
+});
+
+test('a move is never sent a turn budget below one millisecond and unlimited stays 0', () => {
+  const a = setup({ turnMs: 10000 });
+  connect(a.match, 'A'); connect(a.match, 'B');
+  a.t.v += 9999;
+  a.match.agentDisconnected('A');
+  a.match.agentConnected('A', hello());
+  a.match.agentMessage('A', { type: 'ready', ok: true });
+  assert.equal(goes(a.sent, 'A').at(-1).turnMs, 1);
+  const b = setup({ turnMs: 0 });
+  connect(b.match, 'A'); connect(b.match, 'B');
+  assert.equal(goes(b.sent, 'A').at(-1).turnMs, 0);
+});

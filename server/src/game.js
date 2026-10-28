@@ -33,6 +33,8 @@ class GameState {
 
   timeLeftMs(player) { return this.clock.remaining(player); }
 
+  turnLeftMs() { return this.clock.turnRemaining(); }
+
   _finish(result) {
     this.clock.stop();
     this.result = result;

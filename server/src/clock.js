@@ -30,6 +30,13 @@ class Clock {
     return Math.max(0, this.matchMs - this._spent(player));
   }
 
+  // Time left in the current move; the full limit while stopped, 0 when moves are unlimited.
+  turnRemaining() {
+    if (this.turnMs <= 0) return 0;
+    if (!this.running) return this.turnMs;
+    return Math.max(0, this.turnMs - (this.now() - this.running.since));
+  }
+
   expired() {
     if (!this.running) return null;
     const { player, since } = this.running;

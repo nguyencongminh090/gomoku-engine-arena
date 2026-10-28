@@ -7,6 +7,7 @@ const path = require('node:path');
 const { EngineProcess } = require('../src/engine-process');
 const { SearchSession } = require('../src/search');
 const rapfi = require('../src/adapters/rapfi');
+const gomocup = require('../src/adapters/gomocup');
 
 const FAKE = path.join(__dirname, 'fake-engine.js');
 const cfg = { rule: 'freestyle', w: 15, h: 15, matchMs: 600000, turnMs: 0 };
@@ -17,11 +18,11 @@ const procs = [];
 // A failing assertion must never leave an engine behind, or the runner would not exit.
 after(() => { for (const p of procs) if (p.child) p.child.kill('SIGKILL'); });
 
-async function make(env = {}, opts = {}) {
+async function make(env = {}, opts = {}, adapter = rapfi) {
   const proc = new EngineProcess(FAKE, { env: { ...process.env, ...env } });
   procs.push(proc);
   proc.start();
-  const session = new SearchSession(proc, rapfi, opts);
+  const session = new SearchSession(proc, adapter, opts);
   session.configure(cfg);
   await sleep(150); // let the fake print OK for START
   return { proc, session, done: () => proc.stop() };
@@ -110,5 +111,14 @@ test('engine that dies mid-search rejects the search and is restarted by the nex
   proc.env.FAKE_THINK_MS = '30';
   await sleep(50);
   assert.deepEqual(await session.search(req([])), { x: 0, y: 0 });
+  await done();
+});
+
+test('classic adapter: an empty-board search after a finished game starts from a clean board', async () => {
+  const { session, done } = await make({ FAKE_KIND: 'classic' }, {}, gomocup);
+  assert.deepEqual(await session.search(req([])), { x: 0, y: 0 });
+  // Game 2 on the same engine: it moves first on an empty board, but the engine still holds game 1's stone.
+  const second = await Promise.race([session.search(req([])), sleep(2000).then(() => 'stale board')]);
+  assert.deepEqual(second, { x: 0, y: 0 });
   await done();
 });

@@ -16,9 +16,13 @@ module.exports = {
   ],
   // BOARD replaces the whole position and starts the search. Colours are absolute (1 = first stone's side),
   // which Rapfi resolves from the first entry, so no relative mapping is needed.
-  beginSearch: ({ stones, timeLeftMs }) => (stones.length === 0
-    ? ['RESTART', `INFO TIME_LEFT ${timeLeftMs}`, 'BEGIN']
-    : [`INFO TIME_LEFT ${timeLeftMs}`, 'BOARD', ...stones.map((s) => `${s.x},${s.y},${s.c}`), 'DONE']),
+  // The move budget is sent with every search: after a reconnect it is shorter than the configured one.
+  beginSearch: ({ stones, timeLeftMs, turnMs }) => {
+    const budget = [`INFO TIMEOUT_TURN ${turnMs > 0 ? turnMs : UNLIMITED}`, `INFO TIME_LEFT ${timeLeftMs}`];
+    return stones.length === 0
+      ? ['RESTART', ...budget, 'BEGIN']
+      : [...budget, 'BOARD', ...stones.map((s) => `${s.x},${s.y},${s.c}`), 'DONE'];
+  },
   parseLine,
   stopCommand: () => 'YXSTOP',
 };

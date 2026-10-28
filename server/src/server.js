@@ -76,6 +76,8 @@ async function startServer({
       },
       onEvent: (event) => {
         if (event.type === 'gameOver') { db.saveGame(room.id, event.record); registry.touch(room.id); }
+        // Engine info carries the principal variation and both players hold the watch link: never show it live.
+        if (event.type === 'info' || event.type === 'log') return;
         broadcast(entry, { type: 'event', event });
       },
     });

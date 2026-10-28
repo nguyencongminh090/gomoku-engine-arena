@@ -14,8 +14,11 @@
 
   function fromSnapshot(snap, now) {
     const cur = snap.current;
+    const sc = snap.score;
+    const byScore = sc.A === sc.B ? null : sc.A > sc.B ? 'A' : 'B';
     return {
-      state: snap.state, cfg: snap.cfg, players: snap.players, score: snap.score, records: snap.records, winner: undefined,
+      state: snap.state, cfg: snap.cfg, players: snap.players, score: sc, records: snap.records,
+      winner: snap.state === 'done' ? (snap.winner !== undefined ? snap.winner : byScore) : undefined,
       current: cur && { ...cur, receivedAt: now },
     };
   }

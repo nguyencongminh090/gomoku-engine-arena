@@ -247,3 +247,18 @@ test('trustProxy uses the rightmost X-Forwarded-For entry, which the proxy itsel
     assert.equal((await post('8.8.8.8')).status, 201);
   }, { trustProxy: true });
 });
+
+test('engine info and logs are not broadcast to viewers (the other side could read the principal variation)', async () => {
+  await withServer(async ({ ws, post, open, until }) => {
+    const room = (await post()).body;
+    const view = await open(`${ws}/ws/view/${room.viewId}`);
+    await until(() => view.inbox.length);
+    const a = await open(`${ws}/ws/agent`); a.send(hello(room.tokenA));
+    await until(() => a.inbox.find((m) => m.type === 'config'));
+    a.send(JSON.stringify({ type: 'info', data: { text: 'depth 9 pv K7 J8' } }));
+    a.send(JSON.stringify({ type: 'log', level: 'info', text: 'secret' }));
+    a.send(JSON.stringify({ type: 'ready', ok: true }));
+    await until(() => view.inbox.find((m) => m.type === 'event' && m.event.type === 'status' && m.event.players.A.ready));
+    assert.equal(view.inbox.some((m) => m.type === 'event' && ['info', 'log'].includes(m.event.type)), false);
+  });
+});

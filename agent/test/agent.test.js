@@ -171,3 +171,25 @@ test('agent stops reconnecting when the server says the token is bad', async () 
   assert.equal(count, 1);
   assert.equal(agent.fatal, 'bad token');
 });
+
+test('agent gives the engine the remaining move time minus a safety margin on every search', async () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const log = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'agent-log-')), 'log.txt');
+  let conn;
+  const url = await scriptedServer((c) => { conn = c; });
+  await startAgent(url, { FAKE_THINK_MS: '20', FAKE_LOG: log }, { marginMs: 150 });
+  await until(() => conn && conn.inbox.length);
+  conn.send(config({ turnMs: 5000 }));
+  await until(() => conn.inbox.find((m) => m.type === 'ready'));
+  conn.send(go({ turnMs: 2000, timeLeftMs: 60000 }));
+  await until(() => conn.inbox.find((m) => m.type === 'move'));
+  const lines = fs.readFileSync(log, 'utf8').split('\n');
+  assert.ok(lines.includes('INFO TIMEOUT_TURN 1850'), lines.join('|'));
+  assert.ok(lines.includes('INFO TIME_LEFT 59850'));
+  conn.send(go({ gameId: 1, turnMs: 0, timeLeftMs: 100, stones: [{ x: 0, y: 0, c: 1 }], ply: 1, toMove: 2 }));
+  await until(() => conn.inbox.filter((m) => m.type === 'move').length === 2);
+  const after = fs.readFileSync(log, 'utf8').split('\n');
+  assert.ok(after.includes('INFO TIMEOUT_TURN 2147483647')); // unlimited stays unlimited
+  assert.ok(after.includes('INFO TIME_LEFT 1')); // never below 1 ms
+});

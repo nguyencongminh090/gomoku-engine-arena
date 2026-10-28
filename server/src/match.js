@@ -59,6 +59,7 @@ class Match {
       cfg: { rule: this.cfg.rule, w: this.cfg.w, h: this.cfg.h, games: this.cfg.games, matchMs: this.cfg.matchMs, turnMs: this.cfg.turnMs },
       players: this._status(),
       score: this._score(),
+      ...(this.state === 'done' ? { winner: this._winner() } : {}),
       records: this.records,
       current: g && {
         gameIndex: this.gameIndex,
@@ -153,7 +154,8 @@ class Match {
     if (!this._present(mover)) return;
     this._send(mover, P.go({
       gameId: this.gameIndex, ply: g.ply, stones: g.stones(), toMove: (g.ply % 2) + 1,
-      timeLeftMs: g.timeLeftMs(mover), turnMs: this.cfg.turnMs,
+      // After a reconnect the move clock has been running, so send what is left of it, not the full limit.
+      timeLeftMs: g.timeLeftMs(mover), turnMs: this.cfg.turnMs > 0 ? Math.max(1, g.turnLeftMs()) : 0,
     }));
   }
 
@@ -185,9 +187,12 @@ class Match {
   _endMatch() {
     this.state = 'done';
     this.game = null;
+    this.emit({ type: 'matchOver', score: this._score(), winner: this._winner() });
+  }
+
+  _winner() {
     const score = this._score();
-    const winner = score.A === score.B ? null : score.A > score.B ? 'A' : 'B';
-    this.emit({ type: 'matchOver', score, winner });
+    return score.A === score.B ? null : score.A > score.B ? 'A' : 'B';
   }
 
   _gone(p) { return !this._present(p) && this.now() - this.players[p].since > this.reconnectMs; }

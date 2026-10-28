@@ -90,7 +90,11 @@ readline.createInterface({ input: process.stdin }).on('line', (raw) => {
       stones = new Set();
       block = { search: CMD === 'BOARD' };
       break;
-    case 'BEGIN': if (!started) out('ERROR game not started'); else think(); break;
+    case 'BEGIN':
+      if (!started) out('ERROR game not started');
+      else if (stones.size > 0) out('ERROR Board is not empty.'); // like Rapfi (protocol.md section 4)
+      else think();
+      break;
     case 'TURN': { const [x, y] = rest[0].split(','); stones.add(`${Number(x)},${Number(y)}`); think(); break; }
     default: out(`UNKNOWN ${cmd}`);
   }

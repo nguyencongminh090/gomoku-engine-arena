@@ -14,11 +14,14 @@ const INFO_INTERVAL_MS = 250; // the server allows 20 messages per second
 // Runs a local engine and plays whatever the server asks of it. The server is the referee; this side only
 // answers `go` with one move and aborts on `stop`/`gameOver`.
 class Agent extends EventEmitter {
-  constructor({ enginePath, token, serverUrl, engineEnv, reconnectMs = 1000, graceMs }) {
+  // marginMs is shaved off both budgets: the server charges network latency to the player, so the engine must
+  // finish a little before the server's limit.
+  constructor({ enginePath, token, serverUrl, engineEnv, reconnectMs = 1000, graceMs, marginMs = 150 }) {
     super();
     this.token = token;
     this.serverUrl = serverUrl;
     this.reconnectMs = reconnectMs;
+    this.marginMs = marginMs;
     this.engine = new EngineProcess(enginePath, engineEnv ? { env: engineEnv } : {});
     this.graceMs = graceMs;
     this.ws = null;
@@ -130,7 +133,9 @@ class Agent extends EventEmitter {
     const gen = this.gen;
     if (this.session.state !== 'idle') await this.session.abort();
     const { w, h } = this.cfg;
-    const move = await this.session.search({ stones: go.stones, toMove: go.toMove, timeLeftMs: go.timeLeftMs, turnMs: go.turnMs, w, h });
+    const turnMs = go.turnMs > 0 ? Math.max(1, go.turnMs - this.marginMs) : 0;
+    const timeLeftMs = Math.max(1, go.timeLeftMs - this.marginMs);
+    const move = await this.session.search({ stones: go.stones, toMove: go.toMove, timeLeftMs, turnMs, w, h });
     if (!move || gen !== this.gen || ws !== this.ws) return; // aborted, superseded, or the connection died
     this._send({ type: 'move', gameId: go.gameId, ply: go.ply, x: move.x, y: move.y });
   }
