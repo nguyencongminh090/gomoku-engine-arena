@@ -92,7 +92,8 @@ async function startServer({
 
   // ---- HTTP ----
   const clientIp = (req) => {
-    if (trustProxy && req.headers['x-forwarded-for']) return String(req.headers['x-forwarded-for']).split(',')[0].trim();
+    // Behind one trusted proxy the rightmost entry is the one it appended; earlier entries come from the client.
+    if (trustProxy && req.headers['x-forwarded-for']) return String(req.headers['x-forwarded-for']).split(',').at(-1).trim();
     return req.socket.remoteAddress;
   };
 
@@ -131,6 +132,7 @@ async function startServer({
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
     let rel;
     try { rel = decodeURIComponent(url.pathname); } catch { res.writeHead(400); return res.end(); }
+    if (rel.includes('\0')) { res.writeHead(400); return res.end(); }
     if (rel.endsWith('/')) rel += 'index.html';
     const file = path.resolve(WEB_ROOT, `.${rel}`);
     if (!file.startsWith(WEB_ROOT + path.sep)) { res.writeHead(404); return res.end(); }
@@ -145,10 +147,14 @@ async function startServer({
     return undefined;
   }
 
+  // Never throws: a bad request target is a 400, anything unexpected a 500.
+  const parseTarget = (req) => { try { return new URL(req.url, 'http://x'); } catch { return null; } };
+
   const handler = (req, res) => {
-    const url = new URL(req.url, 'http://x');
-    const run = url.pathname.startsWith('/api/') ? handleApi(req, res, url) : Promise.resolve(serveStatic(req, res, url));
-    run.catch((e) => {
+    const url = parseTarget(req);
+    if (!url) { res.writeHead(400); return res.end(); }
+    const run = url.pathname.startsWith('/api/') ? handleApi(req, res, url) : Promise.resolve().then(() => serveStatic(req, res, url));
+    return run.catch((e) => {
       if (!res.headersSent) json(res, 500, { error: 'internal' });
       console.error('request failed:', e);
     });
@@ -220,9 +226,10 @@ async function startServer({
   }
 
   server.on('upgrade', (req, socket, head) => {
-    const url = new URL(req.url, 'http://x');
+    const refuse = (status = '404 Not Found') => { socket.write(`HTTP/1.1 ${status}\r\nConnection: close\r\n\r\n`); socket.destroy(); };
+    const url = parseTarget(req);
+    if (!url) return refuse('400 Bad Request');
     const parts = url.pathname.split('/').filter(Boolean);
-    const refuse = () => { socket.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n'); socket.destroy(); };
     if (parts[0] !== 'ws') return refuse();
     if (parts[1] === 'agent' && parts.length === 2) return wss.handleUpgrade(req, socket, head, onAgent);
     if (parts[1] === 'view' && parts.length === 3) {

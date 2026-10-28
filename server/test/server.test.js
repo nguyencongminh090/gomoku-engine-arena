@@ -212,3 +212,38 @@ test('a finished game is saved and a restarted server resumes the match', async 
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+function raw(port, text) {
+  const net = require('node:net');
+  return new Promise((resolve) => {
+    const s = net.connect(port, '127.0.0.1', () => s.write(text));
+    let out = '';
+    s.on('data', (d) => { out += d; });
+    s.on('close', () => resolve(out));
+    s.on('error', () => resolve(out));
+    setTimeout(() => s.destroy(), 500);
+  });
+}
+
+test('malformed request targets get 400/404 and never crash the server', async () => {
+  await withServer(async ({ srv, base }) => {
+    for (const target of ['//', '/%00', '/%00.html', '/api/%00', 'http://[']) {
+      const reply = await raw(srv.port, `GET ${target} HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n`);
+      assert.match(reply, /^HTTP\/1\.1 (400|404)/, target);
+    }
+    const upgrade = await raw(srv.port, 'GET // HTTP/1.1\r\nHost: x\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n');
+    assert.match(upgrade, /^HTTP\/1\.1 (400|404)/);
+    assert.equal((await fetch(`${base}/`)).status, 200); // still alive
+  });
+});
+
+test('trustProxy uses the rightmost X-Forwarded-For entry, which the proxy itself appended', async () => {
+  await withServer(async ({ base }) => {
+    const post = (xff) => fetch(`${base}/api/rooms`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': xff }, body: JSON.stringify(roomCfg),
+    });
+    for (let i = 0; i < 5; i++) assert.equal((await post(`10.0.0.${i}, 9.9.9.9`)).status, 201);
+    assert.equal((await post('10.0.0.99, 9.9.9.9')).status, 429); // spoofed left entry changes nothing
+    assert.equal((await post('8.8.8.8')).status, 201);
+  }, { trustProxy: true });
+});
