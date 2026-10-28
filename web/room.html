@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phòng đấu</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="index.html" data-i18n="app.name">Đấu engine</a>
+  <button id="langBtn" type="button" class="ghost" data-i18n="lang.switch">English</button>
+</header>
+<main class="narrow">
+  <h1 data-i18n="room.title">Phòng đấu</h1>
+  <p id="secretNote" class="warn" hidden data-i18n="room.secretNote"></p>
+  <p id="noSecrets" class="muted" hidden data-i18n="room.noSecrets"></p>
+  <section id="players"></section>
+  <section class="card">
+    <h2 data-i18n="room.watchLink"></h2>
+    <div class="copyrow"><input id="watchUrl" type="text" readonly><button type="button" class="copy" data-copy="watchUrl" data-i18n="room.copy"></button></div>
+    <p><a id="watchOpen" href="#" data-i18n="room.openWatch"></a></p>
+  </section>
+  <section class="card">
+    <h2 data-i18n="watch.title"></h2>
+    <ul id="statusList" class="plain"></ul>
+  </section>
+  <p class="muted" data-i18n="room.expires"></p>
+  <p><button id="deleteBtn" type="button" class="danger" hidden data-i18n="room.delete"></button></p>
+  <p id="roomMsg" role="status"></p>
+</main>
+<script src="js/i18n.js"></script>
+<script src="js/live.js"></script>
+<script src="js/room.js"></script>
+</body>
+</html>

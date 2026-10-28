@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trận đấu</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="index.html" data-i18n="app.name">Đấu engine</a>
+  <span id="conn" class="muted" role="status"></span>
+  <button id="langBtn" type="button" class="ghost" data-i18n="lang.switch">English</button>
+</header>
+<main class="watch">
+  <section class="boardcol">
+    <div id="scoreLine" class="scoreline"></div>
+    <div id="boardWrap" class="boardwrap"><div id="board"></div></div>
+    <div id="replayBar" class="replaybar" hidden>
+      <button id="stepPrev" type="button" class="ghost" aria-label="-">◀</button>
+      <input id="stepRange" type="range" min="0" max="0" value="0" data-i18n-aria-label="watch.step">
+      <button id="stepNext" type="button" class="ghost" aria-label="+">▶</button>
+      <button id="backLive" type="button" data-i18n="watch.live"></button>
+    </div>
+  </section>
+  <aside class="sidecol">
+    <div id="statusLine" class="status"></div>
+    <div id="playerCards" class="players"></div>
+    <h2 data-i18n="watch.games"></h2>
+    <ul id="gameList" class="plain games"></ul>
+    <h2 data-i18n="watch.moves"></h2>
+    <ol id="moveList" class="moves"></ol>
+  </aside>
+</main>
+<script src="js/i18n.js"></script>
+<script src="js/board.js"></script>
+<script src="js/live.js"></script>
+<script src="js/watch.js"></script>
+</body>
+</html>

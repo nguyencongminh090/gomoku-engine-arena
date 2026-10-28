@@ -1,0 +1,211 @@
+// All user-visible strings. Vietnamese is the default, English the second language.
+(function () {
+  const TS = (window.TestSite = window.TestSite || {});
+
+  const vi = {
+    'app.name': 'Đấu engine',
+    'nav.create': 'Tạo trận',
+    'lang.switch': 'English',
+    'create.title': 'Tạo trận đấu engine',
+    'create.intro': 'Hai người chơi, mỗi người chạy engine của mình trên máy riêng; máy chủ làm trọng tài.',
+    'create.rule': 'Luật',
+    'rule.freestyle': 'Freestyle (từ 5 quân thắng)',
+    'rule.standard': 'Standard (đúng 5 quân thắng)',
+    'rule.caro': 'Caro (6+ thắng; đúng 5 thắng nếu không bị chặn cả hai đầu)',
+    'create.width': 'Chiều rộng (5–22)',
+    'create.height': 'Chiều cao (5–22)',
+    'create.games': 'Số ván',
+    'create.matchMinutes': 'Thời gian cả ván cho mỗi bên (phút)',
+    'create.turnSeconds': 'Thời gian mỗi nước (giây, 0 = không giới hạn)',
+    'create.reconnect': 'Chờ nối lại khi rớt mạng (giây)',
+    'create.openings': 'Khai cuộc',
+    'create.openingsHelp': 'Mỗi dòng một khai cuộc, các nước x,y cách nhau bằng dấu cách hoặc dấu chấm phẩy (toạ độ bắt đầu từ 0). Dấu - là bàn trống. Mỗi khai cuộc được đấu hai ván đổi bên.',
+    'create.warnRapfi': 'Bàn chữ nhật và luật Standard/Caro cần engine kiểu Rapfi. Engine Gomocup cổ điển chỉ chơi bàn vuông luật Freestyle.',
+    'create.submit': 'Tạo phòng',
+    'create.creating': 'Đang tạo…',
+    'create.errSize': 'Cạnh bàn phải là số nguyên từ 5 đến 22.',
+    'create.errGames': 'Số ván phải là số nguyên từ 1 đến 200.',
+    'create.errMatch': 'Thời gian cả ván phải lớn hơn 0.',
+    'create.errTurn': 'Thời gian mỗi nước phải là số không âm.',
+    'create.errReconnect': 'Thời gian chờ nối lại phải từ 1 đến 3600 giây.',
+    'create.errOpenings': 'Cần ít nhất một số khai cuộc bằng nửa số ván (làm tròn lên).',
+    'create.errRule': 'Luật không hợp lệ.',
+    'create.errServer': 'Không tạo được phòng: {msg}',
+    'create.errRate': 'Bạn đang mở quá nhiều phòng. Hãy xoá bớt hoặc đợi phòng cũ hết hạn.',
+    'create.errNetwork': 'Không kết nối được máy chủ.',
+    'room.title': 'Phòng đấu',
+    'room.secretNote': 'Hãy lưu các liên kết và mã token này ngay: chúng chỉ hiện một lần và không xem lại được sau khi đóng tab.',
+    'room.noSecrets': 'Tab này không còn giữ mã token của phòng. Dùng liên kết xem để theo dõi trận.',
+    'room.player': 'Người chơi {p}',
+    'room.token': 'Mã token',
+    'room.command': 'Lệnh chạy agent (thay đường dẫn engine)',
+    'room.watchLink': 'Liên kết xem',
+    'room.copy': 'Sao chép',
+    'room.copied': 'Đã chép',
+    'room.delete': 'Xoá phòng',
+    'room.confirmDelete': 'Xoá phòng này? Mọi ván đã lưu sẽ mất.',
+    'room.deleted': 'Phòng đã bị xoá.',
+    'room.deleteFailed': 'Không xoá được phòng.',
+    'room.missing': 'Không tìm thấy phòng.',
+    'room.openWatch': 'Mở trang xem',
+    'room.expires': 'Phòng tự xoá sau 24 giờ không hoạt động.',
+    'watch.title': 'Trận đấu',
+    'watch.score': 'Tỷ số',
+    'watch.draws': 'hoà',
+    'watch.game': 'Ván {n}',
+    'watch.games': 'Các ván',
+    'watch.moves': 'Nước đi',
+    'watch.live': 'Trực tiếp',
+    'watch.replay': 'Xem lại',
+    'watch.noMoves': 'Chưa có nước đi.',
+    'watch.opening': 'Khai cuộc',
+    'watch.firstMover': 'Đi trước: {p}',
+    'watch.toMove': 'Đến lượt {p}',
+    'watch.connected': 'đã kết nối',
+    'watch.disconnected': 'chưa kết nối',
+    'watch.ready': 'sẵn sàng',
+    'watch.refused': 'bị từ chối: {reason}',
+    'watch.engine': 'Engine',
+    'watch.state.waiting': 'Đang chờ hai bên sẵn sàng',
+    'watch.state.playing': 'Đang đấu',
+    'watch.state.between': 'Chờ ván kế',
+    'watch.state.done': 'Trận đã kết thúc',
+    'watch.winner': 'Người thắng cả trận: {p}',
+    'watch.drawMatch': 'Trận hoà',
+    'watch.connecting': 'Đang kết nối…',
+    'watch.lost': 'Mất kết nối với máy chủ, đang thử lại…',
+    'watch.notFound': 'Không tìm thấy trận này (có thể đã hết hạn).',
+    'watch.winnerOf': '{p} thắng',
+    'watch.drawGame': 'Hoà',
+    'watch.step': 'Nước thứ',
+    'result.five': 'năm quân liên tiếp',
+    'result.full': 'bàn đầy',
+    'result.timeoutTurn': 'hết giờ nước đi',
+    'result.timeoutMatch': 'hết giờ cả ván',
+    'result.disconnect': 'rớt kết nối',
+    'result.absent': 'vắng mặt',
+    'result.illegal': 'nước đi phạm luật',
+  };
+
+  const en = {
+    'app.name': 'Engine match',
+    'nav.create': 'New match',
+    'lang.switch': 'Tiếng Việt',
+    'create.title': 'Create an engine match',
+    'create.intro': 'Two players each run their own engine on their own machine; the server is the referee.',
+    'create.rule': 'Rule',
+    'rule.freestyle': 'Freestyle (5 or more wins)',
+    'rule.standard': 'Standard (exactly 5 wins)',
+    'rule.caro': 'Caro (6+ wins; exactly 5 wins unless blocked at both ends)',
+    'create.width': 'Width (5–22)',
+    'create.height': 'Height (5–22)',
+    'create.games': 'Number of games',
+    'create.matchMinutes': 'Whole-game time per side (minutes)',
+    'create.turnSeconds': 'Time per move (seconds, 0 = unlimited)',
+    'create.reconnect': 'Wait for reconnect after a drop (seconds)',
+    'create.openings': 'Openings',
+    'create.openingsHelp': 'One opening per line, moves written x,y separated by spaces or semicolons (coordinates start at 0). A single - is the empty board. Each opening is played twice with sides swapped.',
+    'create.warnRapfi': 'Rectangular boards and the Standard/Caro rules need a Rapfi-style engine. Classic Gomocup engines only play square Freestyle boards.',
+    'create.submit': 'Create room',
+    'create.creating': 'Creating…',
+    'create.errSize': 'Each side must be a whole number from 5 to 22.',
+    'create.errGames': 'Games must be a whole number from 1 to 200.',
+    'create.errMatch': 'The whole-game time must be greater than 0.',
+    'create.errTurn': 'The time per move must not be negative.',
+    'create.errReconnect': 'The reconnect wait must be between 1 and 3600 seconds.',
+    'create.errOpenings': 'You need at least as many openings as half the number of games (rounded up).',
+    'create.errRule': 'Unknown rule.',
+    'create.errServer': 'Could not create the room: {msg}',
+    'create.errRate': 'You have too many open rooms. Delete one or wait for it to expire.',
+    'create.errNetwork': 'Could not reach the server.',
+    'room.title': 'Match room',
+    'room.secretNote': 'Save these links and tokens now: they are shown once and cannot be recovered after you close this tab.',
+    'room.noSecrets': 'This tab no longer holds the room tokens. Use the watch link to follow the match.',
+    'room.player': 'Player {p}',
+    'room.token': 'Token',
+    'room.command': 'Agent command (replace the engine path)',
+    'room.watchLink': 'Watch link',
+    'room.copy': 'Copy',
+    'room.copied': 'Copied',
+    'room.delete': 'Delete room',
+    'room.confirmDelete': 'Delete this room? All saved games will be lost.',
+    'room.deleted': 'The room was deleted.',
+    'room.deleteFailed': 'Could not delete the room.',
+    'room.missing': 'Room not found.',
+    'room.openWatch': 'Open the watch page',
+    'room.expires': 'The room is removed after 24 hours without activity.',
+    'watch.title': 'Match',
+    'watch.score': 'Score',
+    'watch.draws': 'draws',
+    'watch.game': 'Game {n}',
+    'watch.games': 'Games',
+    'watch.moves': 'Moves',
+    'watch.live': 'Live',
+    'watch.replay': 'Replay',
+    'watch.noMoves': 'No moves yet.',
+    'watch.opening': 'Opening',
+    'watch.firstMover': 'First: {p}',
+    'watch.toMove': '{p} to move',
+    'watch.connected': 'connected',
+    'watch.disconnected': 'not connected',
+    'watch.ready': 'ready',
+    'watch.refused': 'refused: {reason}',
+    'watch.engine': 'Engine',
+    'watch.state.waiting': 'Waiting for both sides to be ready',
+    'watch.state.playing': 'In progress',
+    'watch.state.between': 'Waiting for the next game',
+    'watch.state.done': 'Match finished',
+    'watch.winner': 'Match winner: {p}',
+    'watch.drawMatch': 'Match drawn',
+    'watch.connecting': 'Connecting…',
+    'watch.lost': 'Lost the connection to the server, retrying…',
+    'watch.notFound': 'This match was not found (it may have expired).',
+    'watch.winnerOf': '{p} wins',
+    'watch.drawGame': 'Draw',
+    'watch.step': 'Move',
+    'result.five': 'five in a row',
+    'result.full': 'board full',
+    'result.timeoutTurn': 'move time ran out',
+    'result.timeoutMatch': 'game time ran out',
+    'result.disconnect': 'disconnected',
+    'result.absent': 'absent',
+    'result.illegal': 'illegal move',
+  };
+
+  const i18n = {
+    dict: { vi, en },
+    lang: 'vi',
+    t(key, vars) {
+      const text = this.dict[this.lang][key] ?? this.dict.vi[key] ?? key;
+      return vars ? text.replace(/\{(\w+)\}/g, (_, name) => (name in vars ? String(vars[name]) : `{${name}}`)) : text;
+    },
+    setLang(lang) {
+      if (!this.dict[lang]) return;
+      this.lang = lang;
+      try { localStorage.setItem('lang', lang); } catch (e) { /* storage may be unavailable */ }
+      if (typeof document !== 'undefined') { document.documentElement.lang = lang; this.apply(document); }
+      if (typeof document !== 'undefined') document.dispatchEvent(new Event('langchange'));
+    },
+    // Fills data-i18n (text), data-i18n-placeholder, data-i18n-title and data-i18n-aria-label.
+    apply(root) {
+      const fill = (attr, set) => root.querySelectorAll(`[${attr}]`).forEach((el) => set(el, this.t(el.getAttribute(attr))));
+      fill('data-i18n', (el, v) => { el.textContent = v; });
+      fill('data-i18n-placeholder', (el, v) => { el.placeholder = v; });
+      fill('data-i18n-title', (el, v) => { el.title = v; });
+      fill('data-i18n-aria-label', (el, v) => el.setAttribute('aria-label', v));
+    },
+    init() {
+      let saved = null;
+      try { saved = localStorage.getItem('lang'); } catch (e) { /* ignore */ }
+      if (saved && this.dict[saved]) this.lang = saved;
+      document.documentElement.lang = this.lang;
+      this.apply(document);
+      const btn = document.getElementById('langBtn');
+      if (btn) btn.addEventListener('click', () => this.setLang(this.lang === 'vi' ? 'en' : 'vi'));
+    },
+  };
+
+  TS.i18n = i18n;
+  TS.t = (key, vars) => i18n.t(key, vars);
+  if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => i18n.init());
+}());
