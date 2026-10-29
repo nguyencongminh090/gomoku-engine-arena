@@ -193,3 +193,19 @@ test('agent gives the engine the remaining move time minus a safety margin on ev
   assert.ok(after.includes('INFO TIMEOUT_TURN 2147483647')); // unlimited stays unlimited
   assert.ok(after.includes('INFO TIME_LEFT 1')); // never below 1 ms
 });
+
+test('an engine that prints an unsolicited move is reported to the server instead of failing silently', async () => {
+  let conn;
+  const url = await scriptedServer((c) => { conn = c; });
+  const agent = await startAgent(url, { FAKE_KIND: 'rapfi', FAKE_STRAY: '1' });
+  const problems = [];
+  agent.on('engineProblem', (line) => problems.push(line));
+  await until(() => conn && conn.inbox.length);
+  conn.send(config());
+  await until(() => conn.inbox.find((m) => m.type === 'ready'));
+  conn.send(go());
+  const log = await until(() => conn.inbox.find((m) => m.type === 'log'));
+  assert.equal(log.level, 'warn');
+  assert.match(log.text, /9,9/);
+  assert.match(problems[0], /warn: .*9,9/);
+});

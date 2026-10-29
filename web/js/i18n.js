@@ -103,6 +103,7 @@
     'create.srv.range': 'Dòng {line}: có ô nằm ngoài bàn.',
     'create.srv.duplicate': 'Dòng {line}: có ô bị lặp lại.',
     'create.srv.winning': 'Dòng {line}: khai cuộc đã có một hàng thắng.',
+    'create.srv.full': 'Dòng {line}: khai cuộc đã lấp đầy bàn.',
     'create.srv.empty': 'Cần ít nhất một khai cuộc (dùng - cho bàn trống).',
     'create.srv.tooFew': 'Không đủ khai cuộc cho số ván đã chọn.',
   };
@@ -208,6 +209,7 @@
     'create.srv.range': 'Line {line}: a cell is outside the board.',
     'create.srv.duplicate': 'Line {line}: a cell is repeated.',
     'create.srv.winning': 'Line {line}: the opening already contains a winning line.',
+    'create.srv.full': 'Line {line}: the opening fills the whole board.',
     'create.srv.empty': 'At least one opening is required (use - for the empty board).',
     'create.srv.tooFew': 'There are not enough openings for the chosen number of games.',
   };

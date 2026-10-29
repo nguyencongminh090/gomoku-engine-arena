@@ -44,6 +44,8 @@ class Agent extends EventEmitter {
     if (this.adapter) {
       this.session = new SearchSession(this.engine, this.adapter, this.graceMs ? { graceMs: this.graceMs } : {});
       this.session.on('info', (data) => this._forwardInfo(data));
+      this.session.on('engineError', (text) => this._engineLog('error', text));
+      this.session.on('stray', ({ x, y }) => this._engineLog('warn', `unsolicited move ${x},${y} from the engine while idle`));
     }
     this.emit('status', `engine: ${this.info.name} ${this.info.version} (${this.info.kind})`);
     this._connect();
@@ -90,6 +92,11 @@ class Agent extends EventEmitter {
 
   _send(msg) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(msg));
+  }
+
+  _engineLog(level, text) {
+    this.emit('engineProblem', `${level}: ${text}`);
+    this._send({ type: 'log', level, text: String(text).slice(0, 500) });
   }
 
   _forwardInfo(data) {

@@ -262,3 +262,12 @@ test('engine info and logs are not broadcast to viewers (the other side could re
     assert.equal(view.inbox.some((m) => m.type === 'event' && ['info', 'log'].includes(m.event.type)), false);
   });
 });
+
+test('static pages carry a content security policy that forbids inline scripts', async () => {
+  await withServer(async ({ base }) => {
+    const csp = (await fetch(`${base}/`)).headers.get('content-security-policy');
+    assert.match(csp, /default-src 'self'/);
+    assert.doesNotMatch(csp, /script-src[^;]*unsafe-inline/);
+    assert.match(csp, /frame-ancestors 'none'/);
+  });
+});

@@ -50,3 +50,19 @@ test('opening errors carry the offending line number', () => {
   assert.equal(line('7,7\n\n3,3 3,3'), 3);
   assert.equal(line('a,b'), 1);
 });
+
+test('rejects an opening that fills the board (nobody could move)', () => {
+  // Search a deterministic shuffle of the 5x5 cells in which neither colour makes five, so only "full" can reject it.
+  let seed = 1;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  for (let attempt = 0; attempt < 500; attempt++) {
+    const cells = [];
+    for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) cells.push(`${x},${y}`);
+    for (let k = cells.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [cells[k], cells[j]] = [cells[j], cells[k]]; }
+    const c = code(() => parseOpenings(cells.join(' '), 5, 5, 'freestyle'));
+    if (c === 'winning') continue;
+    assert.equal(c, 'full');
+    return;
+  }
+  assert.fail('no win-free full 5x5 ordering found');
+});

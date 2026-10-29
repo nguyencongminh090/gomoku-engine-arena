@@ -20,6 +20,9 @@ const MAX_BAD_FRAMES = 5;
 // Close codes (4xxx are ours).
 const CLOSE = { replaced: 4000, badToken: 4401, badFrames: 4400, helloTimeout: 4408, roomGone: 4410, flood: 4429 };
 
+// Pages load only their own scripts and styles and talk to their own origin (fetch and WebSocket).
+const CSP = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'";
+
 function json(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json', 'x-content-type-options': 'nosniff' });
   res.end(JSON.stringify(body));
@@ -142,7 +145,7 @@ async function startServer({
       if (err) { res.writeHead(404); return res.end(); }
       res.writeHead(200, {
         'content-type': MIME[path.extname(file)] || 'application/octet-stream',
-        'x-content-type-options': 'nosniff', 'cache-control': 'no-cache',
+        'x-content-type-options': 'nosniff', 'cache-control': 'no-cache', 'content-security-policy': CSP,
       });
       return res.end(data);
     });
@@ -203,6 +206,7 @@ async function startServer({
         return undefined;
       }
       if (msg.type === 'hello') return undefined;
+      if (ctx.entry.agents[ctx.player] !== ws) return undefined; // replaced: it is about to be closed and must not move
       if (msg.type === 'move') registry.touch(ctx.entry.room.id);
       ctx.entry.match.agentMessage(ctx.player, msg);
       return undefined;

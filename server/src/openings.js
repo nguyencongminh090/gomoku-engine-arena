@@ -32,6 +32,7 @@ function parseOpenings(text, w, h, rule) {
       if (checkWin(board, x, y, rule)) throw fail('winning', `line ${lineNo + 1}: opening already contains a win`, lineNo + 1);
       cells.push({ x, y });
     }
+    if (cells.length >= w * h) throw fail('full', `line ${lineNo + 1}: the opening fills the board`, lineNo + 1);
     openings.push(cells);
   }
   if (openings.length === 0) throw fail('empty', 'no openings given');

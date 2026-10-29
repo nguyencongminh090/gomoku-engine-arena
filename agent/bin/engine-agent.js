@@ -20,6 +20,7 @@ if (!a || !a.engine || !a.token || !a.server) {
 
 const agent = new Agent({ enginePath: a.engine, token: a.token, serverUrl: a.server });
 agent.on('status', (s) => console.log(s));
+agent.on('engineProblem', (line) => console.error(`engine ${line}`));
 agent.on('fatal', (why) => { console.error(`stopped: ${why}`); agent.stop().then(() => process.exit(1)); });
 // SIGBREAK is Ctrl+Break / console close on Windows; Node ignores it on other platforms.
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGBREAK']) process.on(sig, () => agent.stop().then(() => process.exit(0)));
