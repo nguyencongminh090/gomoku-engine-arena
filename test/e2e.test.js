@@ -44,7 +44,7 @@ test('4-game caro match on a 15x12 board plays to a stored result', { timeout: 6
 
   const mkAgent = (token, row) => {
     const agent = new Agent({
-      enginePath: FAKE, token, serverUrl: `ws://127.0.0.1:${srv.port}/ws/agent`,
+      enginePath: process.execPath, engineArgs: [FAKE], token, serverUrl: `ws://127.0.0.1:${srv.port}/ws/agent`,
       engineEnv: { ...process.env, FAKE_THINK_MS: '10', FAKE_ROW: String(row) },
     });
     cleanup.push(() => agent.stop());

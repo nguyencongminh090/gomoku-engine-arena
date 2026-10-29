@@ -19,7 +19,7 @@ const procs = [];
 after(() => { for (const p of procs) if (p.child) p.child.kill('SIGKILL'); });
 
 async function make(env = {}, opts = {}, adapter = rapfi) {
-  const proc = new EngineProcess(FAKE, { env: { ...process.env, ...env } });
+  const proc = new EngineProcess(process.execPath, { args: [FAKE], env: { ...process.env, ...env } });
   procs.push(proc);
   proc.start();
   const session = new SearchSession(proc, adapter, opts);

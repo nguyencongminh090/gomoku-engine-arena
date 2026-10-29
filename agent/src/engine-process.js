@@ -1,7 +1,16 @@
-const { spawn } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const { EventEmitter } = require('node:events');
 const path = require('node:path');
 const readline = require('node:readline');
+
+// Node refuses to spawn .bat/.cmd directly on Windows, so those go through cmd.exe.
+const isBatch = (exe) => process.platform === 'win32' && /\.(bat|cmd)$/i.test(exe);
+
+// SIGKILL on a batch wrapper would only end cmd.exe and orphan the engine, so Windows kills the whole tree.
+function killTree(child, viaShell) {
+  if (viaShell && child.pid) spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+  else child.kill('SIGKILL');
+}
 
 // Wraps one engine executable. Emits 'line' (stdout), 'stderr', 'exit' (current child only) and 'restart'.
 // Runs in the engine's own directory so it finds its config and network files
@@ -20,8 +29,13 @@ class EngineProcess extends EventEmitter {
 
   start() {
     if (this.child) return;
-    const child = spawn(path.resolve(this.exePath), this.args, { cwd: this.cwd, env: this.env, stdio: ['pipe', 'pipe', 'pipe'] });
+    const exe = path.resolve(this.exePath);
+    const viaShell = isBatch(exe);
+    const child = viaShell
+      ? spawn(`"${exe}"`, this.args.map((a) => `"${a}"`), { cwd: this.cwd, env: this.env, stdio: ['pipe', 'pipe', 'pipe'], shell: true })
+      : spawn(exe, this.args, { cwd: this.cwd, env: this.env, stdio: ['pipe', 'pipe', 'pipe'] });
     this.child = child;
+    this.viaShell = viaShell;
     // Late events from a replaced child must never be mistaken for the current one.
     const current = () => this.child === child;
     readline.createInterface({ input: child.stdout }).on('line', (line) => { if (current()) this.emit('line', line); });
@@ -40,7 +54,7 @@ class EngineProcess extends EventEmitter {
     if (!child) return;
     const exited = new Promise((resolve) => child.once('exit', resolve));
     this.write('END');
-    const timer = setTimeout(() => child.kill('SIGKILL'), 1000);
+    const timer = setTimeout(() => killTree(child, this.viaShell), 1000);
     await exited;
     clearTimeout(timer);
   }
@@ -48,7 +62,7 @@ class EngineProcess extends EventEmitter {
   restart() {
     const old = this.child;
     this.child = null; // detach first: the old child's remaining events are now ignored
-    if (old) old.kill('SIGKILL');
+    if (old) killTree(old, this.viaShell);
     this.start();
     this.emit('restart');
   }

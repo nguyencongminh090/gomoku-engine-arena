@@ -16,13 +16,13 @@ const INFO_INTERVAL_MS = 250; // the server allows 20 messages per second
 class Agent extends EventEmitter {
   // marginMs is shaved off both budgets: the server charges network latency to the player, so the engine must
   // finish a little before the server's limit.
-  constructor({ enginePath, token, serverUrl, engineEnv, reconnectMs = 1000, graceMs, marginMs = 150 }) {
+  constructor({ enginePath, engineArgs, token, serverUrl, engineEnv, reconnectMs = 1000, graceMs, marginMs = 150 }) {
     super();
     this.token = token;
     this.serverUrl = serverUrl;
     this.reconnectMs = reconnectMs;
     this.marginMs = marginMs;
-    this.engine = new EngineProcess(enginePath, engineEnv ? { env: engineEnv } : {});
+    this.engine = new EngineProcess(enginePath, { ...(engineArgs ? { args: engineArgs } : {}), ...(engineEnv ? { env: engineEnv } : {}) });
     this.graceMs = graceMs;
     this.ws = null;
     this.stopped = false;

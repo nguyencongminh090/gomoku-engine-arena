@@ -11,7 +11,7 @@ const procs = [];
 after(() => { for (const p of procs) if (p.child) p.child.kill('SIGKILL'); });
 
 function engine(env = {}) {
-  const p = new EngineProcess(FAKE, { env: { ...process.env, ...env } });
+  const p = new EngineProcess(process.execPath, { args: [FAKE], env: { ...process.env, ...env } });
   procs.push(p);
   p.start();
   return p;
@@ -36,7 +36,7 @@ test('unknown about is unknown', async () => {
 });
 
 test('an engine that never answers ABOUT is unknown', async () => {
-  const p = new EngineProcess('/bin/cat'); // echoes ABOUT back, which is not an ABOUT reply
+  const p = new EngineProcess(process.execPath, { args: ['-e', "process.stdin.pipe(process.stdout)"] }); // echoes ABOUT back, which is not an ABOUT reply
   procs.push(p); p.start();
   const info = await detectEngine(p, { timeoutMs: 300 });
   assert.equal(info.kind, 'unknown');
@@ -77,7 +77,7 @@ test('rapfi ERROR on RULE is reported with the command', async () => {
 });
 
 test('probe reports an engine that stops answering', async () => {
-  const p = new EngineProcess('/bin/cat');
+  const p = new EngineProcess(process.execPath, { args: ['-e', "process.stdin.pipe(process.stdout)"] });
   procs.push(p); p.start();
   const r = await probeConfigure(p, rapfi, cfg, { timeoutMs: 300 });
   assert.equal(r.ok, false);
@@ -95,6 +95,6 @@ test('refusals carry a code and args for the UI', async () => {
   const r = await probeConfigure(p, rapfi, { ...cfg, rule: 'caro' });
   assert.equal(r.code, 'engineRejected');
   assert.deepEqual(r.args, { command: 'INFO RULE 8', error: 'Unknown info rule' });
-  const dead = new EngineProcess('/bin/cat'); procs.push(dead); dead.start();
+  const dead = new EngineProcess(process.execPath, { args: ['-e', "process.stdin.pipe(process.stdout)"] }); procs.push(dead); dead.start();
   assert.equal((await probeConfigure(dead, rapfi, cfg, { timeoutMs: 200 })).code, 'engineNoAnswer');
 });

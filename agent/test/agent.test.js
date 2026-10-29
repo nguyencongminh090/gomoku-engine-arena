@@ -34,7 +34,7 @@ async function until(pred, ms = 3000) {
 }
 
 async function startAgent(url, env = {}, opts = {}) {
-  const agent = new Agent({ enginePath: FAKE, token: 'room.secret', serverUrl: url, engineEnv: { ...process.env, ...env }, reconnectMs: 50, ...opts });
+  const agent = new Agent({ enginePath: process.execPath, engineArgs: [FAKE], token: 'room.secret', serverUrl: url, engineEnv: { ...process.env, ...env }, reconnectMs: 50, ...opts });
   cleanup.push(() => agent.stop());
   await agent.start();
   return agent;
