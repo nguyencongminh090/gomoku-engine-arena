@@ -1,7 +1,7 @@
 {
-  "name": "testsite",
+  "name": "gomoku-engine-arena",
   "version": "1.0.0",
-  "description": "",
+  "description": "Engine-vs-engine testing server for Gomoku/Caro (Gomocup-style engines)",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "private": "true",
   "dependencies": {
     "better-sqlite3": "^13.0.3",
